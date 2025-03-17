@@ -16,12 +16,12 @@ type TCPServer struct {
 	wg       sync.WaitGroup
 }
 
-func NewTCPServer(network, addres string) (*TCPServer, error) {
-	listener, err := net.Listen(network, addres)
+func NewTCPServer(network, address string) (*TCPServer, error) {
+	listener, err := net.Listen(network, address)
 	if err != nil {
-		return nil, fmt.Errorf("failed to listen %s: %w", addres, err)
+		return nil, fmt.Errorf("failed to listen %s: %w", address, err)
 	}
-	log.Printf("Server announced %s", addres)
+	log.Printf("Server announced %s", address)
 	return &TCPServer{listener: listener, quit: make(chan struct{})}, nil
 }
 
@@ -47,7 +47,7 @@ func (s *TCPServer) Stop() {
 	// Ждем завершения tcp соединений
 	s.wg.Wait()
 
-	log.Println("Server is stoped")
+	log.Println("Server is stopped")
 
 }
 
@@ -62,7 +62,7 @@ func (s *TCPServer) acceptConnections() {
 		default:
 			conn, err := s.listener.Accept()
 			if err != nil {
-				log.Printf("Connection dont accepting %s", err)
+				log.Printf("Failed to accept connection: %s", err)
 				continue
 			}
 			s.wg.Add(1)
@@ -98,7 +98,7 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 				}
 				return
 			}
-			log.Printf("Recived from %s:\n--->%s", conn.RemoteAddr(), buf[:n])
+			log.Printf("Received from %s:\n--->%s", conn.RemoteAddr(), buf[:n])
 			if _, err := conn.Write(buf[:n]); err != nil {
 				log.Println("handle error write: ", err)
 				return
