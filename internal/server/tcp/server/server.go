@@ -1,9 +1,11 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"log"
 	"net"
+	"os"
 	"sync"
 	"time"
 )
@@ -17,9 +19,9 @@ type TCPServer struct {
 func NewTCPServer(network, addres string) (*TCPServer, error) {
 	listener, err := net.Listen(network, addres)
 	if err != nil {
-		return nil, fmt.Errorf("failed to listen: %s %w", addres, err)
+		return nil, fmt.Errorf("failed to listen %s: %w", addres, err)
 	}
-	log.Printf("Server unnonced %s", addres)
+	log.Printf("Server announced %s", addres)
 	return &TCPServer{listener: listener, quit: make(chan struct{})}, nil
 }
 
@@ -72,38 +74,34 @@ func (s *TCPServer) acceptConnections() {
 func (s *TCPServer) handleConnection(conn net.Conn) {
 	// Закрытие соединения
 
-	defer s.wg.Done()
-	defer log.Println("Connection closed ", conn.RemoteAddr())
-	defer conn.Close()
+	defer func() {
+		s.wg.Done()
+		log.Println("Connection closed ", conn.RemoteAddr())
+		conn.Close()
+	}()
 
 	log.Printf("New connection: %s", conn.RemoteAddr())
 	buf := make([]byte, 1024)
-	isReaded := make(chan struct{})
-	isClosed := make(chan struct{})
-
-	go func() { isReaded <- struct{}{} }()
 	for {
 		select {
 		case <-s.quit:
 			return
-		case <-isClosed:
-			return
 		default:
-			select {
-			case <-isReaded:
-				go func() {
-					n, err := conn.Read(buf)
-					if err != nil {
-						log.Println("handle: ", err)
-						isClosed <- struct{}{}
-						return
-					}
-					log.Printf("Recived from %s:\n--->%s", conn.RemoteAddr(), buf[:n])
-					conn.Write(buf[:n])
-					isReaded <- struct{}{}
-				}()
-			case <-time.After(time.Second * 1):
-				continue
+			// чтобы I/O операция не держала цикл, ведь может прийти сигнал о закрытии - устанавливаем dedline
+			conn.SetReadDeadline(time.Now().Add(time.Second * 5))
+			n, err := conn.Read(buf)
+			if err != nil {
+				log.Println("handle: ", err)
+				// Если ошибка timeout, то продолжаем
+				if errors.Is(err, os.ErrDeadlineExceeded) {
+					continue
+				}
+				return
+			}
+			log.Printf("Recived from %s:\n--->%s", conn.RemoteAddr(), buf[:n])
+			if _, err := conn.Write(buf[:n]); err != nil {
+				log.Println("handle error write: ", err)
+				return
 			}
 
 		}
