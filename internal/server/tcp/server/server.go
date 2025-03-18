@@ -115,6 +115,9 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 				if errors.Is(err, os.ErrDeadlineExceeded) {
 					connLogger.Debug("Read timeout")
 					continue
+				} else if errors.Is(err, io.EOF) {
+					connLogger.Debug("Client closed connection: EOF")
+					return
 				} else {
 					connLogger.Error("Read error",
 						"error", err,
