@@ -65,7 +65,7 @@ func (s *TCPServer) acceptConnections() {
 				log.Printf("Failed to accept connection: %s", err)
 				continue
 			}
-			s.wg.Add(1)
+
 			go s.handleConnection(conn)
 		}
 	}
@@ -80,7 +80,9 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 		conn.Close()
 	}()
 
+	s.wg.Add(1)
 	log.Printf("New connection: %s", conn.RemoteAddr())
+
 	buf := make([]byte, 1024)
 	for {
 		select {
@@ -91,12 +93,14 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 			conn.SetReadDeadline(time.Now().Add(time.Second * 5))
 			n, err := conn.Read(buf)
 			if err != nil {
-				log.Println("handle: ", err)
 				// Если ошибка timeout, то продолжаем
 				if errors.Is(err, os.ErrDeadlineExceeded) {
+					log.Println("Nothing to read for deadline:", err)
 					continue
+				} else {
+					log.Println("handle error: ", err)
+					return
 				}
-				return
 			}
 			log.Printf("Received from %s:\n--->%s", conn.RemoteAddr(), buf[:n])
 			if _, err := conn.Write(buf[:n]); err != nil {
