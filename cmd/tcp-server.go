@@ -2,6 +2,8 @@ package main
 
 import (
 	"fmt"
+	"log/slog"
+	"os"
 
 	"github.com/Valery223/ServerTestingLab/internal/server/tcp/server"
 )
@@ -10,7 +12,8 @@ import (
 // nc localhost 8080
 
 func main() {
-	serv, _ := server.NewTCPServer("tcp", "localhost:8080")
+	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
+	serv, _ := server.NewTCPServer("tcp", "localhost:8080", logger)
 	go serv.Run()
 
 	var inputCommand string

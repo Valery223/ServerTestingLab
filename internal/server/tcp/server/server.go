@@ -3,7 +3,8 @@ package server
 import (
 	"errors"
 	"fmt"
-	"log"
+	"io"
+	"log/slog"
 	"net"
 	"os"
 	"sync"
@@ -14,31 +15,34 @@ type TCPServer struct {
 	listener net.Listener
 	quit     chan struct{}
 	wg       sync.WaitGroup
+	logger   *slog.Logger
 }
 
-func NewTCPServer(network, address string) (*TCPServer, error) {
+func NewTCPServer(network, address string, logger *slog.Logger) (*TCPServer, error) {
 	listener, err := net.Listen(network, address)
 	if err != nil {
 		return nil, fmt.Errorf("failed to listen %s: %w", address, err)
 	}
-	log.Printf("Server announced %s", address)
-	return &TCPServer{listener: listener, quit: make(chan struct{})}, nil
+	logger.Info("Server announced",
+		"network", network,
+		"address", address,
+	)
+	return &TCPServer{listener: listener, quit: make(chan struct{}), logger: logger}, nil
 }
 
 func (s *TCPServer) Run() {
-	log.Printf("Server started on %s", s.listener.Addr())
 	go s.acceptConnections()
 
 	<-s.quit
 
-	log.Println("The server began to stop")
 }
 
 // Остановка сервера, это прекращение прослушивания сокета,
 // Завершение всех активных соединений
 func (s *TCPServer) Stop() {
-
-	// Информирование tcp соединений о завершении
+	s.logger.Info("Server stopping",
+		"address", s.listener.Addr(),
+	)
 	close(s.quit)
 
 	// Прекращение прослушивания сокета
@@ -47,14 +51,17 @@ func (s *TCPServer) Stop() {
 	// Ждем завершения tcp соединений
 	s.wg.Wait()
 
-	log.Println("Server is stopped")
-
+	s.logger.Info("Server stopped", "address", s.listener.Addr())
 }
 
 // План такой: выходим, а handle горутины когда нибудь сами завершаться
 // Проблема: Нет точного времени, гарантирующего завершени их, мы сами не разрываем соединение
 
 func (s *TCPServer) acceptConnections() {
+	s.logger.Info("Server started accepting connections",
+		"address", s.listener.Addr(),
+		"network", s.listener.Addr().Network(),
+	)
 	for {
 		select {
 		case <-s.quit:
@@ -62,7 +69,13 @@ func (s *TCPServer) acceptConnections() {
 		default:
 			conn, err := s.listener.Accept()
 			if err != nil {
-				log.Printf("Failed to accept connection: %s", err)
+				// Проверяем, является ли ошибка результатом закрытия сервера
+				if errors.Is(err, net.ErrClosed) {
+					s.logger.Info("Server is shutting down", "address", s.listener.Addr())
+					return
+				}
+				// Логируем неожиданные ошибки
+				s.logger.Error("Failed to accept connection", "error", err)
 				continue
 			}
 
@@ -72,16 +85,22 @@ func (s *TCPServer) acceptConnections() {
 }
 
 func (s *TCPServer) handleConnection(conn net.Conn) {
-	// Закрытие соединения
+	connLogger := s.logger.With(
+		"remote_addr", conn.RemoteAddr(),
+		"local_addr", conn.LocalAddr(),
+		"network", conn.RemoteAddr().Network(),
+	)
 
 	defer func() {
 		s.wg.Done()
-		log.Println("Connection closed ", conn.RemoteAddr())
-		conn.Close()
+		connLogger.Info("Connection closed")
+		if err := conn.Close(); err != nil {
+			connLogger.Error("Error closing connection", "error", err)
+		}
 	}()
 
 	s.wg.Add(1)
-	log.Printf("New connection: %s", conn.RemoteAddr())
+	connLogger.Info("New connection established")
 
 	buf := make([]byte, 1024)
 	for {
@@ -93,21 +112,30 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 			conn.SetReadDeadline(time.Now().Add(time.Second * 5))
 			n, err := conn.Read(buf)
 			if err != nil {
-				// Если ошибка timeout, то продолжаем
 				if errors.Is(err, os.ErrDeadlineExceeded) {
-					log.Println("Nothing to read for deadline:", err)
+					connLogger.Debug("Read timeout")
 					continue
 				} else {
-					log.Println("handle error: ", err)
+					connLogger.Error("Read error",
+						"error", err,
+						"is_eof", errors.Is(err, io.EOF),
+					)
 					return
 				}
 			}
-			log.Printf("Received from %s:\n--->%s", conn.RemoteAddr(), buf[:n])
+
+			connLogger.Info("Data received",
+				"bytes_read", n,
+				"data", string(buf[:n]),
+			)
+
 			if _, err := conn.Write(buf[:n]); err != nil {
-				log.Println("handle error write: ", err)
+				connLogger.Error("Write error",
+					"error", err,
+					"bytes_to_write", n,
+				)
 				return
 			}
-
 		}
 	}
 }
