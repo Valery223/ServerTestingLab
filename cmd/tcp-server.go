@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"time"
 
 	"github.com/Valery223/ServerTestingLab/internal/server/tcp/server"
 )
@@ -20,6 +19,4 @@ func main() {
 	}
 
 	serv.Stop()
-
-	time.Sleep(time.Second * 2)
 }
