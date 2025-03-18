@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -13,7 +14,6 @@ import (
 
 type TCPServer struct {
 	listener net.Listener
-	quit     chan struct{}
 	wg       sync.WaitGroup
 	logger   *slog.Logger
 }
@@ -27,24 +27,22 @@ func NewTCPServer(network, address string, logger *slog.Logger) (*TCPServer, err
 		"network", network,
 		"address", address,
 	)
-	return &TCPServer{listener: listener, quit: make(chan struct{}), logger: logger}, nil
+	return &TCPServer{listener: listener, logger: logger}, nil
 }
 
-func (s *TCPServer) Run() {
-	go s.acceptConnections()
+func (s *TCPServer) Run(ctx context.Context) {
+	go s.acceptConnections(ctx)
 
-	<-s.quit
-
+	<-ctx.Done()
+	s.stop()
 }
 
 // Остановка сервера, это прекращение прослушивания сокета,
 // Завершение всех активных соединений
-func (s *TCPServer) Stop() {
+func (s *TCPServer) stop() {
 	s.logger.Info("Server stopping",
 		"address", s.listener.Addr(),
 	)
-	close(s.quit)
-
 	// Прекращение прослушивания сокета
 	s.listener.Close()
 
@@ -54,17 +52,14 @@ func (s *TCPServer) Stop() {
 	s.logger.Info("Server stopped", "address", s.listener.Addr())
 }
 
-// План такой: выходим, а handle горутины когда нибудь сами завершаться
-// Проблема: Нет точного времени, гарантирующего завершени их, мы сами не разрываем соединение
-
-func (s *TCPServer) acceptConnections() {
+func (s *TCPServer) acceptConnections(ctx context.Context) {
 	s.logger.Info("Server started accepting connections",
 		"address", s.listener.Addr(),
 		"network", s.listener.Addr().Network(),
 	)
 	for {
 		select {
-		case <-s.quit:
+		case <-ctx.Done():
 			return
 		default:
 			conn, err := s.listener.Accept()
@@ -79,18 +74,19 @@ func (s *TCPServer) acceptConnections() {
 				continue
 			}
 
-			go s.handleConnection(conn)
+			go s.handleConnection(ctx, conn)
 		}
 	}
 }
 
-func (s *TCPServer) handleConnection(conn net.Conn) {
+func (s *TCPServer) handleConnection(ctx context.Context, conn net.Conn) {
 	connLogger := s.logger.With(
 		"remote_addr", conn.RemoteAddr(),
 		"local_addr", conn.LocalAddr(),
 		"network", conn.RemoteAddr().Network(),
 	)
 
+	s.wg.Add(1)
 	defer func() {
 		s.wg.Done()
 		connLogger.Info("Connection closed")
@@ -99,13 +95,13 @@ func (s *TCPServer) handleConnection(conn net.Conn) {
 		}
 	}()
 
-	s.wg.Add(1)
 	connLogger.Info("New connection established")
 
 	buf := make([]byte, 1024)
 	for {
 		select {
-		case <-s.quit:
+		case <-ctx.Done():
+			connLogger.Info("Connection closing to server shutdown")
 			return
 		default:
 			// чтобы I/O операция не держала цикл, ведь может прийти сигнал о закрытии - устанавливаем dedline

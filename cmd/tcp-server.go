@@ -1,9 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"log/slog"
 	"os"
+	"time"
 
 	"github.com/Valery223/ServerTestingLab/internal/server/tcp/server"
 )
@@ -14,12 +16,14 @@ import (
 func main() {
 	logger := slog.New(slog.NewTextHandler(os.Stdout, nil))
 	serv, _ := server.NewTCPServer("tcp", "localhost:8080", logger)
-	go serv.Run()
+	ctx, cancel := context.WithCancel(context.Background())
+	go serv.Run(ctx)
 
 	var inputCommand string
 	for inputCommand != "stop" {
 		fmt.Scanln(&inputCommand)
 	}
 
-	serv.Stop()
+	cancel()
+	time.Sleep(time.Second * 5)
 }
