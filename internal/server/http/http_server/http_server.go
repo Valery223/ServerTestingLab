@@ -11,7 +11,7 @@ type HTTP_server struct {
 func (hs *HTTP_server) Init() {
 	mu := http.NewServeMux()
 	userHandler := UserHandler{}
-	mu.Handle("/user", &userHandler)
+	mu.HandleFunc("GET /user", userHandler.GetUser)
 
 	hs.server = http.Server{Addr: ":8081", Handler: mu}
 }

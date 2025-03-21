@@ -1,14 +1,18 @@
 package httpserver
 
-import "net/http"
+import (
+	"io"
+	"net/http"
+)
 
 type UserHandler struct{}
 
-func (uh *UserHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	switch r.Method {
-	case http.MethodGet:
-		w.Write([]byte("Goood"))
-	default:
-		w.WriteHeader(http.StatusMethodNotAllowed)
-	}
+func (uh *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
+	defer func() {
+		// Дренирование
+		_, _ = io.Copy(io.Discard, r.Body)
+		r.Body.Close()
+	}()
+
+	_, _ = w.Write([]byte("Hello World"))
 }
