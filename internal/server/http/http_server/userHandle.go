@@ -19,35 +19,22 @@ func (uh *UserHandler) GetUser(w http.ResponseWriter, r *http.Request) {
 	}()
 
 	name := r.Header.Get("Name")
-	if name != "" {
-		w.Header().Set("Content-Type", "text/plain")
-		w.WriteHeader(http.StatusOK)
-		n, err := w.Write([]byte(fmt.Sprintf("Received header Name: %s", name)))
-		if err != nil {
-			logger.Logger.Error("request progress",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"remote_addr", r.RemoteAddr,
-				"error", err)
-		} else {
-			logger.Logger.Debug("request progress",
-				"method", r.Method,
-				"path", r.URL.Path,
-				"remote_addr", r.RemoteAddr,
-				"bytes_sent", n)
-		}
-	} else {
-		logger.Logger.Warn("request progress",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"remote_addr", r.RemoteAddr,
-			"error", "name not find")
-
-		// В ручную сначала хочу отправлять ошибку, для обучения
-		// http.Error(w, "Name header is required", http.StatusBadRequest)
-		w.WriteHeader(http.StatusBadRequest)
-		w.Write([]byte("Name header is required"))
+	if len(name) == 0 {
+		logger.LogRequestWarn(r, "missing name header")
+		http.Error(w, "Name header is required", http.StatusBadRequest)
+		return
 	}
+
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(http.StatusOK)
+
+	n, err := w.Write([]byte(fmt.Sprintf("Received header Name: %s", name)))
+	if err != nil {
+		logger.LogRequestWarn(r, "Error write response in body", "err", err)
+	} else {
+		logger.LogRequestDebug(r, "Writed in body response", "write_size", n)
+	}
+
 }
 
 // Логирование body, полученного из запроса
@@ -57,22 +44,28 @@ func (uh *UserHandler) PostUser(w http.ResponseWriter, r *http.Request) {
 		r.Body.Close()
 	}()
 
-	switch r.Header.Get("Content-Type") {
+	switch contentType := r.Header.Get("Content-Type"); contentType {
 	case "text/plain":
 		body, err := io.ReadAll(r.Body)
 		if err != nil {
-			logger.Logger.Error("get error", "error", err)
+			logger.LogRequestError(r, "Read body error", err)
+
+			http.Error(w, "Internal error", http.StatusInternalServerError)
+			return
 		} else {
+			// Временно, для проверки
 			logger.Logger.Info("read from body",
 				"body", string(body))
 		}
 	default:
-		logger.Logger.Warn("request progress",
-			"method", r.Method,
-			"path", r.URL.Path,
-			"remote_addr", r.RemoteAddr,
-			"error", "Unsupported media type")
+		logger.LogRequestWarn(r, "Unsupported media type",
+			"content_type", contentType)
 		http.Error(w, "Unsupported media type", http.StatusUnsupportedMediaType)
-
+		return
 	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write([]byte("OK"))
+
+	logger.LogRequestDebug(r, "Hendle OK")
 }
