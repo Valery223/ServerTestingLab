@@ -1,6 +1,7 @@
 package httpserver
 
 import (
+	"context"
 	"net/http"
 
 	"github.com/Valery223/ServerTestingLab/internal/logger"
@@ -24,6 +25,16 @@ func (hs *HTTPServer) Init() {
 
 func (hs *HTTPServer) Run() error {
 	logger.Logger.Info("Server running", "addr", hs.server.Addr)
-	err := hs.server.ListenAndServe()
-	return err
+	return hs.server.ListenAndServe()
+
+}
+
+func (hs *HTTPServer) Shutdown(ctx context.Context) error {
+	logger.Logger.Info("Server started gracefull shutdawn")
+	return hs.server.Shutdown(ctx)
+}
+
+func (hs *HTTPServer) Close() error {
+	logger.Logger.Info("Server started forced shutdawn")
+	return hs.server.Close()
 }
