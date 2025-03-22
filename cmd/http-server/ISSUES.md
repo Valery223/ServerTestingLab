@@ -9,4 +9,6 @@
 - Тесты
     - Изучить http/httptest
 
-- Реализовать Grasefull shutdown
+- Настройка сервера
+    - Реализовать Grasefull shutdown
+    - KeepALive,  TimeToReadHead etc

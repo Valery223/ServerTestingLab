@@ -7,7 +7,7 @@ import (
 )
 
 func main() {
-	server := &httpserver.HTTP_server{}
+	server := &httpserver.HTTPServer{}
 	server.Init()
 	log.Fatal(server.Run())
 }
