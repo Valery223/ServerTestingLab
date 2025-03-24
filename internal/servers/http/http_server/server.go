@@ -8,11 +8,11 @@ import (
 	"github.com/Valery223/ServerTestingLab/internal/logger"
 )
 
-type HTTPServer struct {
+type Server struct {
 	server http.Server
 }
 
-func (hs *HTTPServer) Init() {
+func (hs *Server) Init() {
 	mu := http.NewServeMux()
 
 	userHandler := UserHandler{}
@@ -35,18 +35,18 @@ func (hs *HTTPServer) Init() {
 	logger.Logger.Info("Server announced", "addr", hs.server.Addr)
 }
 
-func (hs *HTTPServer) Run() error {
+func (hs *Server) Run() error {
 	logger.Logger.Info("Server running", "addr", hs.server.Addr)
 	return hs.server.ListenAndServeTLS("localhost.crt", "localhost.key")
 
 }
 
-func (hs *HTTPServer) Shutdown(ctx context.Context) error {
+func (hs *Server) Shutdown(ctx context.Context) error {
 	logger.Logger.Info("Server started gracefull shutdawn")
 	return hs.server.Shutdown(ctx)
 }
 
-func (hs *HTTPServer) Close() error {
+func (hs *Server) Close() error {
 	logger.Logger.Info("Server started forced shutdawn")
 	return hs.server.Close()
 }

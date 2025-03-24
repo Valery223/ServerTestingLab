@@ -8,12 +8,12 @@ import (
 	"time"
 
 	"github.com/Valery223/ServerTestingLab/internal/logger"
-	httpserver "github.com/Valery223/ServerTestingLab/internal/server/http/http_server"
+	httpserver "github.com/Valery223/ServerTestingLab/internal/servers/http/http_server"
 )
 
 func main() {
 	serverErrors := make(chan error, 1)
-	server := &httpserver.HTTPServer{}
+	server := &httpserver.Server{}
 	server.Init()
 
 	// запуск сервера

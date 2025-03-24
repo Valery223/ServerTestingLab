@@ -7,7 +7,7 @@ import (
 	"os"
 	"time"
 
-	"github.com/Valery223/ServerTestingLab/internal/server/tcp/server"
+	"github.com/Valery223/ServerTestingLab/internal/servers/tcp/server"
 )
 
 // for testing you can use netcat:
