@@ -1,0 +1,6 @@
+services:
+  http-server:
+    build: .
+    command: /app/http-server
+    ports:
+      - "8084:4443"
