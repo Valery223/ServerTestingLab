@@ -1,0 +1,7 @@
+**/.git
+**/node_modules
+**/*.md
+**/testdata
+**/local*.key     # Исключаем локальные SSL-ключи
+**/local*.crt
+cmd/tcp-server    # Игнорируем ненужный сервер
