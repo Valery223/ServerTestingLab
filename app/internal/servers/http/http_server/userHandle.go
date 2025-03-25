@@ -5,7 +5,7 @@ import (
 	"io"
 	"net/http"
 
-	"github.com/Valery223/ServerTestingLab/app/internal/logger"
+	"github.com/Valery223/ServerTestingLab/internal/logger"
 )
 
 type UserHandler struct{}
