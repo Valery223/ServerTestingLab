@@ -5,7 +5,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Valery223/ServerTestingLab/internal/logger"
+	"github.com/Valery223/ServerTestingLab/app/internal/logger"
 )
 
 type Server struct {

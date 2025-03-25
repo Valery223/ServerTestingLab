@@ -7,8 +7,8 @@ import (
 	"os/signal"
 	"time"
 
-	"github.com/Valery223/ServerTestingLab/internal/logger"
-	httpserver "github.com/Valery223/ServerTestingLab/internal/servers/http/http_server"
+	"github.com/Valery223/ServerTestingLab/app/internal/logger"
+	httpserver "github.com/Valery223/ServerTestingLab/app/internal/servers/http/http_server"
 )
 
 func main() {

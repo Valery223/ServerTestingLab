@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/Valery223/ServerTestingLab/internal/logger"
+	"github.com/Valery223/ServerTestingLab/app/internal/logger"
 )
 
 func logginMiddleWare(next http.HandlerFunc) http.HandlerFunc {
