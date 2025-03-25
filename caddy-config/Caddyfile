@@ -1,0 +1,6 @@
+
+
+:4443 {
+    # tls internal
+    reverse_proxy http://http-server:8081
+}

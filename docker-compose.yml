@@ -2,5 +2,19 @@ services:
   http-server:
     build: .
     command: /app/http-server
+    networks:
+      - webnet
+  caddy:
+    image: caddy:2.9
     ports:
-      - "8084:4443"
+      - "4443:4443"
+    volumes:
+      - ./caddy-config/Caddyfile:/etc/caddy/Caddyfile
+    depends_on:
+      - http-server
+    networks:
+      - webnet
+
+networks:
+  webnet:
+    driver: bridge

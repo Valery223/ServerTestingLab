@@ -27,7 +27,7 @@ func (hs *Server) Init() {
 	handleFs := logginMiddleWare(http.StripPrefix("/static/", fs).ServeHTTP)
 	mu.Handle("/static/", handleFs)
 
-	hs.server = http.Server{Addr: ":4443",
+	hs.server = http.Server{Addr: ":8081",
 		Handler:           mu,
 		ReadHeaderTimeout: 3 * time.Second, // Random)
 		IdleTimeout:       5 * time.Minute, // Again random:)
@@ -37,7 +37,7 @@ func (hs *Server) Init() {
 
 func (hs *Server) Run() error {
 	logger.Logger.Info("Server running", "addr", hs.server.Addr)
-	return hs.server.ListenAndServeTLS("localhost.crt", "localhost.key")
+	return hs.server.ListenAndServe()
 
 }
 
