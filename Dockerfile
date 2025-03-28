@@ -29,7 +29,7 @@ COPY --from=builder --chown=appuser /app/localhost.crt /app/localhost.key /app/
 
 WORKDIR /app
 
-EXPOSE 4443
+EXPOSE 8881
 
 CMD ["./http-server"]
 

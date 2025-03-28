@@ -1,13 +1,15 @@
 services:
   http-server:
     build: .
+    container_name: http-server
     command: /app/http-server
     networks:
       - webnet
   caddy:
     image: caddy:2.9
+    container_name: caddy
     ports:
-      - "4443:4443"
+      - "4445:4443"
     volumes:
       - ./caddy-config/Caddyfile:/etc/caddy/Caddyfile
     depends_on:

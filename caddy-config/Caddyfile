@@ -1,5 +1,5 @@
 
 :4443 {
     #tls app/cmd/http-server/localhost.crt app/cmd/http-server/localhost.key
-    reverse_proxy http://localhost:8081
+    reverse_proxy http://http-server:8081
 }
