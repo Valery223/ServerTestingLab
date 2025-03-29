@@ -7,11 +7,18 @@ import (
 	"os/signal"
 	"time"
 
+	"github.com/Valery223/ServerTestingLab/internal/config"
 	"github.com/Valery223/ServerTestingLab/internal/logger"
 	httpserver "github.com/Valery223/ServerTestingLab/internal/servers/http/http_server"
 )
 
 func main() {
+
+	// TODO: load config
+	cfg := config.MustLoad()
+
+	logger.Init(logger.Env(cfg.Env))
+	// Канал с ошибками сервера, для обработки
 	serverErrors := make(chan error, 1)
 	server := &httpserver.Server{}
 	server.Init()

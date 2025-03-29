@@ -6,10 +6,26 @@ import (
 	"os"
 )
 
+type Env string
+
+const (
+	EnvLocal Env = "local"
+	EnvDev   Env = "dev"
+	EnvProd  Env = "prod"
+)
+
 var Logger *slog.Logger
 
-func init() {
-	Logger = slog.New(slog.NewTextHandler(os.Stdout, nil))
+func Init(env Env) {
+
+	switch env {
+	case EnvLocal:
+		Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	case EnvDev:
+		Logger = slog.New(slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug}))
+	case EnvProd:
+		Logger = slog.New(slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo}))
+	}
 }
 
 func logRequest(r *http.Request, level slog.Level, msg string, args ...any) {
