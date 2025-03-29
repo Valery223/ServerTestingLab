@@ -1,6 +1,6 @@
 env: "local" # local, dev, prod
 http_server:
-  address: "localhost:8090"
+  address: ":8090"
   read_header_timeout: 3s
   idle_timeout: 5m
-  
+

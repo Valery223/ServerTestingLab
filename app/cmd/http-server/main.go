@@ -21,7 +21,7 @@ func main() {
 	// Канал с ошибками сервера, для обработки
 	serverErrors := make(chan error, 1)
 	server := &httpserver.Server{}
-	server.Init()
+	server.Init(cfg.HTTPServer)
 
 	// запуск сервера
 	go func() {

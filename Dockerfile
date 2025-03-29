@@ -23,11 +23,18 @@ USER appuser
 # Копируем бинарник
 COPY --from=builder --chown=appuser /bin/http-server /app/
 
+# Копируем конфиг и задаем переменную среды(не знаю точно тут или только в docker compose)
+COPY --chown=appuser app/config/local.yaml /app/config/config.yaml
+ENV CONFIG_PATH=/app/config/config.yaml
+
+
 # Копируем статику и LTS
 COPY --chown=appuser app/cmd/http-server/static /app/static
 COPY --from=builder --chown=appuser /app/localhost.crt /app/localhost.key /app/
 
 WORKDIR /app
+
+
 
 EXPOSE 8881
 

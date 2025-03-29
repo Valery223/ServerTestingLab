@@ -3,8 +3,8 @@ package httpserver
 import (
 	"context"
 	"net/http"
-	"time"
 
+	"github.com/Valery223/ServerTestingLab/internal/config"
 	"github.com/Valery223/ServerTestingLab/internal/logger"
 )
 
@@ -12,7 +12,7 @@ type Server struct {
 	server http.Server
 }
 
-func (hs *Server) Init() {
+func (hs *Server) Init(cfg config.HTTPServer) {
 	mu := http.NewServeMux()
 
 	userHandler := UserHandler{}
@@ -27,10 +27,10 @@ func (hs *Server) Init() {
 	handleFs := logginMiddleWare(http.StripPrefix("/static/", fs).ServeHTTP)
 	mu.Handle("/static/", handleFs)
 
-	hs.server = http.Server{Addr: ":8081",
+	hs.server = http.Server{Addr: cfg.Address,
 		Handler:           mu,
-		ReadHeaderTimeout: 3 * time.Second, // Random)
-		IdleTimeout:       5 * time.Minute, // Again random:)
+		ReadHeaderTimeout: cfg.ReadHeaderTimeout,
+		IdleTimeout:       cfg.IdleTimeout,
 	}
 	logger.Logger.Info("Server announced", "addr", hs.server.Addr)
 }
